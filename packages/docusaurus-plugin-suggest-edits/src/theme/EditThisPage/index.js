@@ -4,10 +4,20 @@ import {usePluginData} from '@docusaurus/useGlobalData';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import {diffLines, diffWords} from 'diff';
 import styles from './styles.module.css';
+import OriginalEditThisPage from '@theme-init/EditThisPage';
+import useRouteContext from '@docusaurus/useRouteContext';
 
 const CONTEXT_LINES = 3;
+// Only the default docs instance gets the editor; blog posts and other pages
+// keep Docusaurus's normal "Edit this page" link.
+export default function EditThisPage(props) {
+  const {plugin} = useRouteContext();
+  const isDefaultDocs = plugin?.name === 'docusaurus-plugin-content-docs' && plugin?.id === 'default';
+  if (!isDefaultDocs) return <OriginalEditThisPage {...props} />;
+  return <DocEditButton />;
+}
 
-export default function EditThisPage() {
+function DocEditButton() {
   const {metadata} = useDoc();
   const {label, docsDir, files} = usePluginData('suggest-edits');
   const [open, setOpen] = useState(false);
@@ -60,7 +70,7 @@ function SuggestEditModal({docPath, onClose}) {
   // Load the page source
   useEffect(() => {
     Promise.all([
-        fetch(manifestUrl).then((r) => {
+      fetch(manifestUrl).then((r) => {
         const isJson = r.headers.get('content-type')?.includes('application/json');
         if (!r.ok || !isJson) {
           throw new Error('Suggest an edit only works on a production build. Run npm run build, then npm run serve.');
@@ -241,7 +251,7 @@ function SuggestEditModal({docPath, onClose}) {
   );
 }
 
-/// Shows changed lines plus a few lines either side; collapses the rest.
+// Shows changed lines plus a few lines either side; collapses the rest.
 // Within a changed line, highlights the words that differ.
 function Diff({original, proposed}) {
   const lines = buildLines(original, proposed);
