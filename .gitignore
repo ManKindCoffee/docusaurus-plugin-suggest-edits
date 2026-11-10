@@ -1,0 +1,12 @@
+node_modules/
+.DS_Store
+*.log
+
+# Example site
+example/build/
+example/.docusaurus/
+example/.env
+example/api/local.settings.json
+example/api/node_modules/
+example/api/_suggest/
+example/api/dist/

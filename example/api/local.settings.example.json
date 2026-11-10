@@ -1,0 +1,12 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "SUGGEST_ADAPTER": "github",
+    "GITHUB_OWNER": "",
+    "GITHUB_REPO": "",
+    "GITHUB_TOKEN": "",
+    "GITHUB_TARGET_BRANCH": "main",
+    "SUGGEST_AUTH": "swa"
+  }
+}

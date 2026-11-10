@@ -1,0 +1,24 @@
+---
+sidebar_position: 1
+title: Components
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Components
+
+MDX pages can include components such as tabs. Readers can edit the text inside a component, but not the component itself.
+
+<Tabs>
+  <TabItem value="readers" label="For readers">
+    Edit this sentence and submit. The suggestion is accepted, because only the text has changed.
+  </TabItem>
+  <TabItem value="maintainers" label="For maintainers">
+    Try changing the `label` of this tab instead. The suggestion is rejected, because component settings are locked.
+  </TabItem>
+</Tabs>
+
+:::tip
+Admonitions like this one are ordinary Markdown, so their text can be edited too.
+:::

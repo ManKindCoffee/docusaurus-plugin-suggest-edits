@@ -1,0 +1,43 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.5);
+}
+.modal {
+  width: min(900px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 1.5rem;
+  border-radius: var(--ifm-global-radius);
+  background: var(--ifm-background-surface-color);
+  color: var(--ifm-font-color-base);
+}
+.editor {
+  width: 100%;
+  min-height: 50vh;
+  padding: 0.75rem;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.9rem;
+}
+.label { display: block; margin-top: 1rem; font-weight: 600; }
+.note { width: 100%; min-height: 4rem; margin-top: 0.25rem; }
+.actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+.diff {
+  max-height: 50vh;
+  overflow: auto;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.added { background: var(--ifm-color-success-contrast-background); }
+.removed { background: var(--ifm-color-danger-contrast-background); }
+.wordAdded { background: rgba(46, 160, 67, 0.4); border-radius: 2px; }
+.wordRemoved { background: rgba(248, 81, 73, 0.4); border-radius: 2px; text-decoration: line-through; }
+.same { opacity: 0.6; }
+.error { color: var(--ifm-color-danger); }
+.gap { opacity: 0.6; font-style: italic; padding: 0.25rem 0; }

@@ -1,0 +1,9 @@
+{
+  "name": "docusaurus-plugin-suggest-edits-monorepo",
+  "private": true,
+  "workspaces": ["packages/*", "example"],
+  "scripts": {
+    "test": "npm test -w docusaurus-plugin-suggest-edits",
+    "build:example": "npm run build -w example"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "suggest-edits-api",
+  "private": true,
+  "type": "module",
+  "main": "dist/*.mjs",
+  "dependencies": {
+    "@azure/functions": "^4"
+  }
+}
