@@ -288,7 +288,7 @@ Please report security issues privately through GitHub security advisories on th
 
 - One file per suggestion
 - Plain text editor, with no live preview (MDX components only render in a full site build)
-- Only the default docs instance is supported. Versioned docs and the blog aren't
+- Only the default docs instance gets the editor. Blog posts and other docs instances keep Docusaurus's normal "Edit this page" link. Versioned docs aren't supported yet
 - Rate limit counts are held in memory, so they reset when the server restarts and aren't shared between serverless instances
 - The prose-only guard understands standard MDX, frontmatter and maths (`remark-math`). Pages using other syntax extensions may be refused as unparseable
 
