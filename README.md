@@ -1,6 +1,6 @@
 # docusaurus-plugin-suggest-edits
 
-Let readers suggest edits to your Docusaurus docs from the page itself. They edit, review a diff and submit, and the change arrives as a pull request on **GitHub** or **Azure DevOps**. Readers don't need a Git account or access to your repository.
+Let readers suggest edits to your Docusaurus docs from the page itself. They edit, review a diff and submit to trigger a pull request on **GitHub** or **Azure DevOps**. Readers don't need a Git account or access to your repository.
 
 **→ [Full documentation](packages/docusaurus-plugin-suggest-edits/README.md)**
 
