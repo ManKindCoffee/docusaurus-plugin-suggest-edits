@@ -5,3 +5,4 @@ export {createRateLimiter} from './rate-limit.mjs';
 export {checkProseOnly} from './prose-guard.mjs';
 export {handlerFromEnv} from './from-env.mjs';
 export {github} from './github.mjs';
+export {managedIdentityToken, azureCliToken, AZURE_DEVOPS_RESOURCE} from './azure-token.mjs';

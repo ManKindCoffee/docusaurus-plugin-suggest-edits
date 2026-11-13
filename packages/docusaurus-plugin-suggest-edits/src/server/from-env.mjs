@@ -3,21 +3,31 @@ import {azureDevOps} from './ado.mjs';
 import {github} from './github.mjs';
 import {anonymous, staticWebAppsAuth} from './auth.mjs';
 import {createRateLimiter} from './rate-limit.mjs';
+import {managedIdentityToken, azureCliToken} from './azure-token.mjs';
+
+// How the Azure DevOps adapter signs in: pat (default), managed-identity or azure-cli
+const ADO_AUTH_MODES = ['pat', 'managed-identity', 'azure-cli'];
 
 const ADAPTERS = {
   'azure-devops': {
-    required: ['ADO_ORG', 'ADO_PROJECT', 'ADO_REPO', 'ADO_PAT', 'ADO_TARGET_BRANCH'],
+    required: (env) => [
+      'ADO_ORG',
+      'ADO_PROJECT',
+      'ADO_REPO',
+      'ADO_TARGET_BRANCH',
+      ...(adoAuthMode(env) === 'pat' ? ['ADO_PAT'] : []),
+    ],
     create: (env) =>
       azureDevOps({
         org: env.ADO_ORG,
         project: env.ADO_PROJECT,
         repo: env.ADO_REPO,
-        pat: env.ADO_PAT,
         targetBranch: env.ADO_TARGET_BRANCH,
+        ...adoCredentials(env),
       }),
   },
   github: {
-    required: ['GITHUB_OWNER', 'GITHUB_REPO', 'GITHUB_TOKEN', 'GITHUB_TARGET_BRANCH'],
+    required: () => ['GITHUB_OWNER', 'GITHUB_REPO', 'GITHUB_TOKEN', 'GITHUB_TARGET_BRANCH'],
     create: (env) =>
       github({
         owner: env.GITHUB_OWNER,
@@ -51,13 +61,35 @@ function adapterFromEnv(env, log) {
     return notConfigured();
   }
 
-  const missing = definition.required.filter((key) => !env[key]);
+  const missing = definition.required(env).filter((key) => !env[key]);
   if (missing.length) {
     log.error(`[suggest-edits] Missing settings for the ${name} adapter: ${missing.join(', ')}`);
     return notConfigured();
   }
 
-  return definition.create(env);
+  try {
+    return definition.create(env);
+  } catch (e) {
+    log.error(`[suggest-edits] ${e.message}`);
+    return notConfigured();
+  }
+}
+
+function adoAuthMode(env) {
+  return env.ADO_AUTH || 'pat';
+}
+
+function adoCredentials(env) {
+  switch (adoAuthMode(env)) {
+    case 'pat':
+      return {pat: env.ADO_PAT};
+    case 'managed-identity':
+      return {getToken: managedIdentityToken({clientId: env.ADO_MANAGED_IDENTITY_CLIENT_ID})};
+    case 'azure-cli':
+      return {getToken: azureCliToken()};
+    default:
+      throw new Error(`Unknown ADO_AUTH "${env.ADO_AUTH}". Use one of: ${ADO_AUTH_MODES.join(', ')}`);
+  }
 }
 
 // Readers get a clear message; the log above tells the site owner what to fix
