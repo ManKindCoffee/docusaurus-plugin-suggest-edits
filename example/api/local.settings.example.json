@@ -7,6 +7,12 @@
     "GITHUB_REPO": "",
     "GITHUB_TOKEN": "",
     "GITHUB_TARGET_BRANCH": "main",
+    "ADO_ORG": "",
+    "ADO_PROJECT": "",
+    "ADO_REPO": "",
+    "ADO_TARGET_BRANCH": "main",
+    "ADO_AUTH": "pat",
+    "ADO_PAT": "",
     "SUGGEST_AUTH": "swa"
   }
 }
