@@ -7,6 +7,9 @@ Install from the repository root first: `npm install`.
 ## Try it locally with the Node server
 
 1. Copy `.env.example` to `.env` and fill in the settings for GitHub or Azure DevOps.
+
+   > For Azure DevOps without a token, set `ADO_AUTH=azure-cli` and run `az login` first.
+
 2. Commit and push, so your Git host has the commit the site is built from.
 3. In one terminal, start the server:
 

@@ -41,6 +41,7 @@ The plugin has two halves:
 - In-page editor with a line and word-level diff before submitting
 - Pull requests opened by a service account, so readers need no repository access
 - Adapters for **GitHub** and **Azure DevOps**
+- Azure DevOps without personal access tokens, using a managed identity
 - Branches start from the exact commit the site was built from, so a suggestion never overwrites newer changes. Conflicts show up in review
 - **Prose-only guard**: readers can change text, but not frontmatter, imports, components or `{…}` expressions
 - Optional sign-in through Azure Static Web Apps, with the submitter recorded on the pull request
@@ -136,8 +137,10 @@ The server reads its settings from environment variables.
 | `ADO_ORG` | Organisation name |
 | `ADO_PROJECT` | Project name |
 | `ADO_REPO` | Repository name |
-| `ADO_PAT` | Personal access token with **Code: Read and write** only |
 | `ADO_TARGET_BRANCH` | Branch that pull requests target, for example `main` |
+| `ADO_AUTH` | How the server signs in: `pat` (default), `managed-identity` or `azure-cli`. See [Azure DevOps without a personal access token](#azure-devops-without-a-personal-access-token) |
+| `ADO_PAT` | Only with `ADO_AUTH=pat`: a personal access token with **Code: Read and write** only |
+| `ADO_MANAGED_IDENTITY_CLIENT_ID` | Only for a user-assigned managed identity: its client ID. Leave unset for a system-assigned identity |
 
 Use a dedicated service account for the token where you can, so pull requests are clearly marked as reader suggestions.
 
@@ -149,6 +152,32 @@ Use a dedicated service account for the token where you can, so pull requests ar
 | `SUGGEST_MAX_PER_HOUR` | `10` | Suggestions per submitter per hour (by user, or by IP address when anonymous) |
 | `SUGGEST_GLOBAL_MAX_PER_HOUR` | `50` | Suggestions per hour across everyone |
 | `SUGGEST_DEBUG` | *(unset)* | `true` shows server errors to readers. **For troubleshooting only** |
+
+### Azure DevOps without a personal access token
+
+Personal access tokens belong to a person, expire and need rotating. With `ADO_AUTH=managed-identity`, the server signs in as the **managed identity** of the Azure Functions app it runs in instead. Azure issues it a Microsoft Entra token that lasts about an hour, and the plugin renews it automatically. There's no secret to store or rotate, and pull requests show the app as their creator.
+
+**Requirements**
+
+- The server runs in an **Azure Functions app** (or App Service) with a managed identity turned on. Static Web Apps' built-in functions don't support managed identities, so use [Option C](#option-c-azure-functions-app). With Static Web Apps, link the Functions app under **Settings → APIs** (Standard plan)
+- Your Azure DevOps organisation is connected to the **same Microsoft Entra directory** as your Azure subscription. Check under **Organization settings → Microsoft Entra** in Azure DevOps
+
+**Setup**
+
+1. Turn on the Functions app's system-assigned identity:
+
+   ```bash
+   az functionapp identity assign --name <app> --resource-group <group>
+   ```
+
+2. In Azure DevOps, go to **Organization settings → Users → Add users**, search for the app's name, choose access level **Basic** and add it to your project. **Project Contributors** is enough for a test. For real use, grant only **Contribute**, **Create branch** and **Contribute to pull requests** on the docs repository
+3. Set `ADO_AUTH=managed-identity` and the other `ADO_` settings on the Functions app. Don't set `ADO_PAT`
+
+**Testing locally**
+
+`ADO_AUTH=azure-cli` uses whoever is signed in with `az login`, so you can test without a token. Pull requests will show you as the creator, so don't use it in production.
+
+The GitHub adapter still uses a token. A GitHub App option is planned.
 
 If a required setting is missing, readers see "Suggestions are not set up on this site yet" and the server log names the missing settings.
 
@@ -227,6 +256,8 @@ The route rule means only signed-in readers can submit. Set `SUGGEST_AUTH=swa` a
 
 Add the server settings under **Settings → Environment variables** in the Azure portal, then deploy `build` with `api` as the API location.
 
+To use a managed identity instead of a token, run the function in its own Functions app ([Option C](#option-c-azure-functions-app)) and link it to the Static Web App.
+
 ### Option B: Node.js or Express
 
 Run the handler on any Node host. It needs access to the site's `build/_suggest` folder.
@@ -253,6 +284,31 @@ http.createServer(handler).listen(3100);
 
 Sign-in through `SUGGEST_AUTH=swa` only works behind Azure Static Web Apps. On other hosts, leave it unset and rely on rate limits, or put the handler behind your own authentication.
 
+### Option C: Azure Functions app
+
+Run the function in its own Functions app. You need this for a managed identity, and it can sit behind Static Web Apps as a linked backend.
+
+Use the same `api` folder and bundle as Option A, and add `api/.funcignore` so your local settings and source aren't uploaded:
+
+```
+local.settings.json
+local.settings.example.json
+node_modules
+src
+```
+
+Then build and publish:
+
+```bash
+npm run build:swa
+cd api
+func azure functionapp publish <app> --javascript --build remote
+```
+
+Add the server settings to the Functions app under **Settings → Environment variables**, or with `az functionapp config appsettings set`.
+
+> **A Functions app on its own is public.** Anyone with its address can submit suggestions. Keep the rate limits low, and for real use put it behind Static Web Apps (as a linked backend) or your own authentication. `SUGGEST_AUTH=swa` only works with Static Web Apps in front.
+
 ### Advanced: build your own handler
 
 Everything is available from `docusaurus-plugin-suggest-edits/server`:
@@ -265,17 +321,33 @@ import {
   anonymous, staticWebAppsAuth, // authentication
   createRateLimiter,
   checkProseOnly,
+  managedIdentityToken, azureCliToken, // Microsoft Entra tokens for Azure DevOps
 } from 'docusaurus-plugin-suggest-edits/server';
 ```
 
 An adapter is an object with a `submit(suggestion)` method that returns `{kind, id, url}`, so you can add your own Git host or send suggestions somewhere else.
+
+## Troubleshooting
+
+| Symptom | Cause and fix |
+|---|---|
+| "Suggestions are not set up on this site yet" | A required setting is missing or empty. The server log names it |
+| "Suggest an edit only works on a production build" | You're running `docusaurus start`. Use `docusaurus build` and `docusaurus serve` |
+| "The site has been updated. Reload the page and try again" | The page and the server come from different builds. Deploy them together |
+| Azure DevOps: "rejected the credentials (203)", or a 401 | The token or identity isn't allowed in the organisation. For `managed-identity` and `azure-cli`, check the organisation is connected to the same Microsoft Entra directory, and that the identity has been added with Basic access |
+| Pull request fails because the commit can't be found | The build commit hasn't been pushed to the Git host. Push it, then rebuild |
+| "Managed identity is not available here" | `ADO_AUTH=managed-identity` is set outside Azure, or the identity isn't turned on. Use `azure-cli` for local testing |
+| `az` fails with `SubscriptionNotFound` when creating resources | The subscription hasn't used that kind of resource before. Register it, for example `az provider register --namespace Microsoft.Storage --wait`, and the same for `Microsoft.Web` and `Microsoft.Insights` |
+| "The selected region is currently not accepting new customers" | Azure capacity restriction. Choose another region |
+| `func` says it can't determine the project language | Add `--javascript` to `func azure functionapp publish` |
 
 ---
 
 ## Security
 
 - **No secrets in the browser.** Tokens live only in the server's environment.
-- **Readers act through a service account**, with the minimum permissions listed above. The submitter is recorded in the pull request description.
+- **Readers act through a service account or managed identity**, with the minimum permissions listed above. The submitter is recorded in the pull request description.
+- **No long-lived tokens with a managed identity.** Azure DevOps access can use short-lived Microsoft Entra tokens issued to the server's own identity, instead of a personal access token.
 - **Only listed pages can be edited.** The server accepts a page only if it appears in the build manifest, so excluded files and paths outside the docs folder are refused.
 - **Prose-only guard.** MDX can run code at build time. The server parses the original and the suggestion and rejects any change to frontmatter, imports and exports, components and their settings, or `{…}` expressions. Text inside components stays editable.
 - **The server uses its own copy of the original page**, not one sent by the browser.
