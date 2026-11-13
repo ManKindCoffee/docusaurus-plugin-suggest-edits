@@ -1,6 +1,6 @@
 {
   "name": "docusaurus-plugin-suggest-edits",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Let readers suggest edits to Docusaurus docs from the page itself. Suggestions arrive as pull requests.",
   "license": "MIT",
   "author": "M.Villa",
@@ -11,8 +11,17 @@
   },
   "homepage": "https://github.com/ManKindCoffee/docusaurus-plugin-suggest-edits#readme",
   "bugs": "https://github.com/ManKindCoffee/docusaurus-plugin-suggest-edits/issues",
-  "keywords": ["docusaurus", "docusaurus-plugin", "suggest-edits", "mdx", "documentation", "pull-request"],
-  "engines": {"node": ">=20"},
+  "keywords": [
+    "docusaurus",
+    "docusaurus-plugin",
+    "suggest-edits",
+    "mdx",
+    "documentation",
+    "pull-request"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "main": "./src/index.js",
   "exports": {
     ".": "./src/index.js",
